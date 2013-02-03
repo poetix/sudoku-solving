@@ -1,4 +1,4 @@
-name := "Muck"
+name := "sudoku-solvers"
 
 version := "0.1"
 

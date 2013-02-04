@@ -48,7 +48,8 @@ class SudokuSolverSpec extends Specification {
       ))
 
     val solved = SudokuSolver.solve(state.get)
-    println(solved.get.placedDigits)
+    println("Solution:")
+    println(solved.get)
     (state.get.analysis.isCompletable must beTrue) and
     (solved must beSome)
   } ^ end

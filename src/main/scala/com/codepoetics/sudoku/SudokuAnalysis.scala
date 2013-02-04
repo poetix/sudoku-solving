@@ -38,10 +38,12 @@ case class SudokuAnalysis(freeCells: DigitGroupSet,
     digit                <- digitSet.digits
   } yield PlacedDigit(col + 1, row + 1, digit)
 
-  lazy val possibleMoves: Stream[PlacedDigit] = for {
-    (row, col, digitSet) <- playableDigits.sortBy(_._3.size).toStream
-    digit    <- digitSet.digits.toStream
-  } yield PlacedDigit(col + 1, row + 1, digit)
+  lazy val possibleMoves: Stream[PlacedDigit] = {
+    val (row, col, digitSet) = playableDigits.sortBy(d => (d._3.size, d._1, d._2)).head
+    digitSet.digits.toStream.map { digit =>
+      PlacedDigit(col + 1, row + 1, digit)
+    }
+  }
 }
 
 object SudokuAnalysis {

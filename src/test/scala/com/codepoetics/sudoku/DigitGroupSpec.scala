@@ -3,23 +3,6 @@ package com.codepoetics.sudoku
 import org.specs2.Specification
 import org.specs2.matcher.Matcher
 
-case class DigitGroup(val bits: Int) {
-  def contains(digit: Int): Boolean = (bits & (1 << digit)) != 0
-
-  def ++(digit: Int): DigitGroup = DigitGroup(bits | (1 << digit))
-  def ++(other: DigitGroup): DigitGroup = DigitGroup(bits | other.bits)
-  def --(digit: Int): DigitGroup = DigitGroup(bits & ~(1 << digit))
-  def --(other: DigitGroup): DigitGroup = DigitGroup(bits & ~(other.bits))
-
-  override def toString(): String = ((1 to 9) map { digit =>
-    if (contains(digit)) digit.toString else "x"
-  }).mkString("Digit Group: [", " ", "]")
-}
-
-object DigitGroup {
-  def apply(digits: Int*): DigitGroup = DigitGroup(digits.foldLeft(0)((acc, digit) => acc | (1 << digit)))
-}
-
 class DigitGroupSpec extends Specification {
 
   def containOnlyTheDigits(digits: Int*): Matcher[DigitGroup] = ({ group: DigitGroup =>
@@ -50,5 +33,11 @@ class DigitGroupSpec extends Specification {
     "should be able to mask itself with another digit group" ! {
       DigitGroup(1, 5, 7, 9)
       (DigitGroup(1, 5, 7) -- DigitGroup(7, 9)) must containOnlyTheDigits(1, 5)
-    } ^ end
+    } ^
+    "should be able to list its contained digits" ! {
+      DigitGroup(1, 5, 7, 9).digits must beEqualTo(List(1, 5, 7, 9))
+    } ^
+    "is invertable" ! {
+      DigitGroup(1, 5, 7, 9).inverted must beEqualTo(DigitGroup(2, 3, 4, 6, 8))
+    } ^end
 }

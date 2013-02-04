@@ -38,9 +38,9 @@ case class SudokuAnalysis(freeCells: DigitGroupSet,
     digit                <- digitSet.digits
   } yield PlacedDigit(col + 1, row + 1, digit)
 
-  lazy val possibleMoves: Stream[PlacedDigit] = {
+  lazy val possibleMoves: List[PlacedDigit] = {
     val (row, col, digitSet) = playableDigits.sortBy(d => (d._3.size, d._1, d._2)).head
-    digitSet.digits.toStream.map { digit =>
+    digitSet.digits.map { digit =>
       PlacedDigit(col + 1, row + 1, digit)
     }
   }

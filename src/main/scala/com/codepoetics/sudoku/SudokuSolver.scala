@@ -10,7 +10,7 @@ object SudokuSolver {
     else if (state.hasForcedMoves) state.afterForced.flatMap { newState => solve(newState) }
     else {
       state.analysis.possibleMoves.flatMap { possibleMove =>
-        state.after(possibleMove).flatMap( newState => solve(newState)).toStream
+        state.after(possibleMove).flatMap( newState => solve(newState))
       }.headOption
     }
   }

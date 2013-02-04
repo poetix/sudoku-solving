@@ -6,14 +6,18 @@ case class SudokuAnalysis(freeCells: DigitGroupSet,
                           freeDigitsByRow: DigitGroupSet,
                           freeDigitsByCol: DigitGroupSet,
                           freeDigitsBySubGrid: DigitGroupSet) {
-  def after(placedDigit: PlacedDigit): SudokuAnalysis = SudokuAnalysis(
-    removeDigit(freeCells, placedDigit.row, placedDigit.col),
-    removeDigit(freeDigitsByRow, placedDigit.row, placedDigit.digit),
-    removeDigit(freeDigitsByCol, placedDigit.col, placedDigit.digit),
-    removeDigit(freeDigitsBySubGrid, placedDigit.subgrid, placedDigit.digit)
-  )
+  def after(placedDigit: PlacedDigit): Option[SudokuAnalysis] = for {
+    newFreeCells           <- removeDigit(freeCells, placedDigit.row, placedDigit.col)
+    newFreeDigitsByRow     <- removeDigit(freeDigitsByRow, placedDigit.row, placedDigit.digit)
+    newFreeDigitsByCol     <- removeDigit(freeDigitsByCol, placedDigit.col, placedDigit.digit)
+    newFreeDigitsBySubGrid <- removeDigit(freeDigitsBySubGrid, placedDigit.subgrid, placedDigit.digit)
+  } yield SudokuAnalysis(newFreeCells, newFreeDigitsByRow, newFreeDigitsByCol, newFreeDigitsBySubGrid)
 
-  def removeDigit(data: DigitGroupSet, index: Int, digit: Int) = data.updated(index - 1, data(index - 1) -- digit)
+  def removeDigit(data: DigitGroupSet, index: Int, digit: Int): Option[DigitGroupSet] = {
+    val dataAtIndex = data(index - 1)
+    if (!dataAtIndex.contains(digit)) None
+    else Some(data.updated(index - 1, dataAtIndex -- digit))
+  }
 
   val emptyCells = for {
     (freeCellsInRow, row) <- freeCells.zipWithIndex
@@ -22,15 +26,22 @@ case class SudokuAnalysis(freeCells: DigitGroupSet,
 
   val playableDigits = for {
     (row, col) <- emptyCells
-    subgrid = ((col) % 3) + ((row) / 3)
+    subgrid = ((col) /3) + ((row / 3) * 3)
   } yield (row, col, (freeDigitsByRow(row) and freeDigitsByCol(col) and freeDigitsBySubGrid(subgrid)))
 
-  val isCompletable: Boolean = playableDigits.find(_._3.isEmpty).isDefined
+  val isCompletable: Boolean = playableDigits.find(_._3.isEmpty).isEmpty
+  lazy val afterForced: Option[SudokuAnalysis] = forcedMoves.foldLeft(Some(this):Option[SudokuAnalysis])( (state, move) => state.flatMap(_.after(move)))
+  lazy val isValid = afterForced.isDefined
 
-  val possibleMoves: Stream[PlacedDigit] = for {
+  lazy val forcedMoves: List[PlacedDigit] = for {
+    (row, col, digitSet) <- playableDigits.filter(_._3.size == 1)
+    digit                <- digitSet.digits
+  } yield PlacedDigit(col + 1, row + 1, digit)
+
+  lazy val possibleMoves: Stream[PlacedDigit] = for {
     (row, col, digitSet) <- playableDigits.sortBy(_._3.size).toStream
     digit    <- digitSet.digits.toStream
-  } yield PlacedDigit(row + 1, col + 1, digit)
+  } yield PlacedDigit(col + 1, row + 1, digit)
 }
 
 object SudokuAnalysis {
